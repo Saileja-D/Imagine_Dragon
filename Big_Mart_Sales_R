@@ -1,0 +1,92 @@
+train <- read.csv(file.choose())
+test <- read.csv(file.choose())
+train
+test
+dim(train)
+test(test)
+dim(test)
+str(train)
+table(is.na(train))
+colSums(is.na(train))
+summary(train)
+load(ggplot2)
+library(ggplot2)
+#ggplot(train, aes(x= Item_Visibility, y = Item_Outlet_Sales)) + geom_point(size = 2.5, color="navy") + xlab("Item Visibility") + ylab("Item Outlet Sales") + ggtitle("Item Visibility vs Item Outlet Sales")
+#ggplot(train, aes(x = Outlet_Identifier, y = Item_Outlet_Sales)) + geom_bar(stat='identity', color = "purple") + xlab("Outlet_Identifier") + ylab("Item Outlet Sales") + ggtitle("Outlet Identifier vs Item Outlet Sales")
+#ggplot(train, aes(Item_Type, Item_Outlet_Sales)) + geom_bar( stat = "identity") +theme(axis.text.x = element_text(angle = 70, vjust = 0.5, color = "navy")) + xlab("Item Type") + ylab("Item Outlet Sales")+ggtitle("Item Type vs Sales")
+#ggplot(train, aes(Item_Type, Item_MRP)) +geom_boxplot() +ggtitle("Box Plot") + theme(axis.text.x = element_text(angle = 70, vjust = 0.5, color = "red")) + xlab("Item Type") + ylab("Item MRP") + ggtitle("Item Type vs Item MRP")
+test$Item_Outlet_Sales <-  1
+combi <- rbind(train, test)
+combi$Item_Weight[is.na(combi$Item_Weight)] <- median(combi$Item_Weight, na.rm = TRUE)
+table(is.na(combi$Item_Weight))
+combi$Item_Visibility <- ifelse(combi$Item_Visibility == 0,
+median(combi$Item_Visibility), combi$Item_Visibility)
+#table(is.na(combi$Item_Weight))table(is.na(combi$Item_Weight))
+> levels(combi$Outlet_Size)[1]
+levels(combi$Outlet_Size)[1]
+levels(combi$Outlet_Size)[1] <- "Other"
+library(plyr)
+combi$Item_Fat_Content <- revalue(combi$Item_Fat_Content,
+c("LF" = "Low Fat", "reg" = "Regular"))
+combi$Item_Fat_Content <- revalue(combi$Item_Fat_Content, c("LF" = "Low Fat", "reg" = "Regular"))
+combi$Item_Fat_Content <- revalue(combi$Item_Fat_Content, c("low fat" = "Low Fat"))
+table(combi$Item_Fat_Content)
+library(dplyr)
+a <- combi%>%
+group_by(Outlet_Identifier)%>%
+tally()
+head(a)
+head(a)
+a <- combi%>%
+group_by(Outlet_Identifier)%>%
+tally()
+head(a)
+a <- combi%>%group_by(Outlet_Identifier)%>%tally()
+head(a)
+a
+library(dplyr)
+a <- combi%>%group_by(Outlet_Identifier)%>%tally()
+head(a)
+a[2]
+names(a[2])<-"Outlet_Count"
+combi <- full_join(a,combi,by="Outlet_Identifier")
+#combi <- full_join(a,combi,by="Outlet Identifier")
+b <- combi%>%group_by(Item_Identifier)%>%tally()
+head(b)
+names(b)[2]<-"Item_Count"
+combi <- merge(b,combi,by="Item_Identifier")
+summary(combi)
+#c <- combi%>%select(Outlet_Establishment_Year)%>% mutate(Outlet_Year = 2013 - combi$Outlet_Establishment_Year)
+#c <- combi%>%select(Outlet_Establishment_Year)%>%mutate(Outlet_Year = 2013 - combi$Outlet_Establishment_Year)
+c <- combi$Outlet_Establishment_Year
+head(c)
+c <- 2013-c
+head(c)
+combi <- cbind(c,combi)
+q <- substr(combi$Item_Identifier,1,2)
+q <- gsub("FD","Food",q)
+q <- gsub("DR","Drinks",q)
+q <- gsub("NC","Non-Consumable",q)
+table(q)
+combi$Item_Type_New <- q
+#Label Encoding: Regular as 1 and Low Fat as 0
+combi$Item_Fat_Content <- ifelse(combi$Item_Fat_Content == "Regular",1,0)
+#one hot-coding for ML application
+sample <- select(combi, Outlet_Location_Type)
+demo_sample <- data.frame(model.matrix(~.-1,sample))
+head(demo_sample)
+library(dummies)
+combi <- dummy.data.frame(combi, names = c('Outlet_Size','Outlet_Location_Type','Outlet_Type', 'Item_Type_New'),  sep='_')
+str (combi)
+#Machine Learning
+combi <- select(combi, -c(Item_Identifier, Outlet_Identifier, Item_Fat_Content, Outlet_Establishment_Year,Item_Type))
+str(combi)
+#For application, resplit into train and test
+new_train <- combi[1:nrow(train),]
+new_test <- combi[-(1:nrow(train)),]
+#Linear (Multiple) Regression
+linear_model <- lm(Item_Outlet_Sales ~ ., data = new_train)
+summary(linear_model)
+#high r-squared, implies wrong model
+cor(new_train)
+#Outlet_Count is highly correlated (negatively) with Outlet Type Grocery Store
